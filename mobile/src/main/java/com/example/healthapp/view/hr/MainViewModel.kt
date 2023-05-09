@@ -10,13 +10,20 @@ import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import androidx.lifecycle.viewModelScope
 import com.example.healthapp.db.repository.Repository
+import com.example.healthapp.mysql.RetrofitInstance
+import com.example.healthapp.mysql.api.HrApi
+import com.example.healthapp.mysql.model.Hr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.text.SimpleDateFormat
 
-class MainViewModel : ViewModel(), DataClient.OnDataChangedListener {
+class MainViewModel : ViewModel(){
 
     private val repository = Repository()
+    private val client = RetrofitInstance.getInstance().create(HrApi::class.java)
 
     private val _hr = MutableLiveData<Int>()
     val hr : LiveData<Int>
@@ -26,32 +33,27 @@ class MainViewModel : ViewModel(), DataClient.OnDataChangedListener {
     val light : LiveData<Int>
     get() = _light
 
+    private val _hrList = MutableLiveData<List<Hr>>()
+    val hrList : LiveData<List<Hr>>
+    get() = _hrList
+
     private fun insertData(value:Int, time:String) = viewModelScope.launch(Dispatchers.IO) {
         repository.insertHrData(value,time)
     }
 
-    override fun onDataChanged(dataEvents: DataEventBuffer) {
-        viewModelScope.launch {
-            dataEvents.forEach { event ->
-                if (event.type == DataEvent.TYPE_CHANGED) {
-                    // DataItem Changed
-                    val item = event.dataItem
-                    Log.d("itemchanged",item.toString())
-                    if (item.uri.path?.compareTo("/heart_rate") == 0) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        _hr.value=dataMap.getInt("heart_rate_key")
-                        val date = SimpleDateFormat("yyyy-MM-dd-hh-mm").format(System.currentTimeMillis())
-                        insertData(_hr.value!!,date)
-                        Log.d("dataischanged",dataMap.getInt("heart_rate_key").toString())
-                    }
-                    else if(item.uri.path?.compareTo("/light")==0){
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        _light.value=dataMap.getInt("light_key")
-                        Log.d("dataischanged",dataMap.getInt("light_key").toString())
-                    }
+    fun getData()  {
+            client.getAllData().enqueue(object : Callback<List<Hr>> {
+                override fun onResponse(call: Call<List<Hr>>, response: Response<List<Hr>>) {
+                    Log.d("APIPhone",response.body().toString())
+
                 }
-            }
+
+                override fun onFailure(call: Call<List<Hr>>, t: Throwable) {
+                    Log.d("APIPhone","fail")
+                    Log.d("APIPhone",t.message.toString())
+                }
+            })
         }
-    }
+
 
 }

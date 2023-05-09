@@ -43,36 +43,31 @@ class HrChartActivity : AppCompatActivity() {
         binding.getListBtn.setOnClickListener {
                 Log.d("edittext",binding.inputTxt.text.toString())
                 val stMin = binding.inputTxt.text.toString().toIntOrNull()
-                dbViewModel.getData()
-                dbViewModel.hrList.observe(this, Observer {
-                    if(dbViewModel.hrList.value!=null){
-                        hrDataList.clear()
-                        Log.d("activityHrChart",dbViewModel.hrList.value.toString())
-                        Log.d("curmin",LocalDateTime.now().toString())
-                        for(item in it){
-                            val dateString = item.time
-                            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm")
-                            val dateTime = LocalDateTime.parse(dateString, formatter)
-                            val minute = dateTime.minute
-                            val curmin=LocalDateTime.now().minute
-//                            Log.d("itemMin",dateTime.toString())
-//                            Log.d("get?",dateTime.dayOfWeek.toString()) // 요일
-//                            Log.d("get!",dateTime.dayOfMonth.toString()) // 일
-//                            Log.d("get@",dateTime.dayOfYear.toString()) // ??
-                            if(minute>= curmin-stMin!!&&dateTime.hour==LocalDateTime.now().hour&&dateTime.dayOfMonth==LocalDateTime.now().dayOfMonth){ //차후에 stMin뺀 값이 시간을 넘어갈 때는 따로 계산해야함
-                                hrDataList.add(item)
-                                binding.statText.text="$minute 분"
-                            }
-                            Log.d("activityHrChartItem",item.toString())
-//                            hrDataList.add(item)
-                        }
-                        Log.d("hrDataList",hrDataList.toString())
-                        addStatEntry(binding.datachart,hrDataList,this.lifecycleScope)
-                    }
-                    else{
-                        Log.d("activityHrChart","dbViewModel.hrList is null")
-                    }
-                })
+                viewModel.getData()
+//                dbViewModel.hrList.observe(this, Observer {
+//                    if(dbViewModel.hrList.value!=null){
+//                        hrDataList.clear()
+//                        Log.d("activityHrChart",dbViewModel.hrList.value.toString())
+//                        Log.d("curmin",LocalDateTime.now().toString())
+//                        for(item in it){
+//                            val dateString = item.time
+//                            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm")
+//                            val dateTime = LocalDateTime.parse(dateString, formatter)
+//                            val minute = dateTime.minute
+//                            val curmin=LocalDateTime.now().minute
+//                            if(minute>= curmin-stMin!!&&dateTime.hour==LocalDateTime.now().hour&&dateTime.dayOfMonth==LocalDateTime.now().dayOfMonth){ //차후에 stMin뺀 값이 시간을 넘어갈 때는 따로 계산해야함
+//                                hrDataList.add(item)
+//                                binding.statText.text="$minute 분"
+//                            }
+//
+//                        }
+//                        Log.d("hrDataList",hrDataList.toString())
+//                        addStatEntry(binding.datachart,hrDataList,this.lifecycleScope)
+//                    }
+//                    else{
+//                        Log.d("activityHrChart","dbViewModel.hrList is null")
+//                    }
+//                })
             binding.deleteBtn.setOnClickListener {
                 dbViewModel.removeAll()
             }
@@ -81,11 +76,9 @@ class HrChartActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        dataClient.addListener(viewModel)
     }
 
     override fun onPause() {
         super.onPause()
-        dataClient.removeListener(viewModel)
     }
 }

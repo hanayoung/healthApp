@@ -139,11 +139,12 @@
                 android:layout_weight="1"
                 />
 
-            <ImageView
+            <Button
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:background="@drawable/more_dot_icon"
                 android:textSize="10sp"
+                android:id="@+id/tensorTest"
                 android:textColor="@color/black"
                 android:layout_gravity="center"/>
             <ImageView

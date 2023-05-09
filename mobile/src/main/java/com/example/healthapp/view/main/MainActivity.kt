@@ -19,6 +19,7 @@ import com.example.healthapp.R
 import com.example.healthapp.adapter.ViewPagerAdapter
 import com.example.healthapp.databinding.ActivityMainBinding
 import com.example.healthapp.db.DbViewModel
+import com.example.healthapp.view.TensorActivity
 import com.example.healthapp.view.hr.MainViewModel
 import com.google.android.material.tabs.TabLayoutMediator
 import java.text.SimpleDateFormat
@@ -82,6 +83,10 @@ class MainActivity : AppCompatActivity() {
                 foregroundServiceIntent.action="STOP"
                 startService(foregroundServiceIntent)
             }
+        }
+        binding.tensorTest.setOnClickListener {
+            val intent = Intent(this,TensorActivity::class.java)
+            startActivity(intent)
         }
 
 //        viewModel.hr.observe(this, Observer {

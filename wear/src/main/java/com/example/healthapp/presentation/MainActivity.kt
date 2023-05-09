@@ -8,6 +8,7 @@ package com.example.healthapp.presentation
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
@@ -40,6 +41,13 @@ class MainActivity : ComponentActivity() {
         val healthServicesRepository = (application as MainApplication).healthServicesRepository
 
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        if (sensorManager.getDefaultSensor(Sensor.TYPE_TEMPERATURE) != null) {
+            // Success! There's a magnetometer.
+            Log.d("sensor","is here!!!")
+        } else {
+            // Failure! No magnetometer.
+            Log.d("sensor","is noooooooot here!!!")
+        }
         lightViewModel = ViewModelProvider(this, LightSensorViewModelFactory(this,dataClient)).get(
             LightSensorViewModel::class.java)
         hrViewModel = ViewModelProvider(this, HrViewModelFactory(this,dataClient)).get(HrViewModel::class.java)
@@ -52,6 +60,7 @@ class MainActivity : ComponentActivity() {
 //            LightSensorScreen(context = this)
 
             MeasureDataApp(healthServicesRepository = healthServicesRepository, dataClient = dataClient)
+//            TempSensorApp(sensorManager = sensorManager, dataClient = dataClient, context = this )
 
 //
 //            lifecycleScope.launch {

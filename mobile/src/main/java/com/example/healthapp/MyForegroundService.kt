@@ -96,16 +96,8 @@ class MyForegroundService : Service(), DataClient.OnDataChangedListener {
                                     if (item.uri.path?.compareTo("/heart_rate") == 0) {
                                         val dataMap = DataMapItem.fromDataItem(item).dataMap
                                         val myData = dataMap.getInt("heart_rate_key")
-                                        val date =
-                                            SimpleDateFormat("yyyy-MM-dd-hh-mm").format(System.currentTimeMillis())
                                         Log.d("MyForegroundService", "Received data: $myData")
-                                        heartRateLiveData.postValue(myData)
-                                        CoroutineScope(Dispatchers.IO).launch {
-//                                        repository.insertHrData(myData, date)
-//                                                sqlRepository.insertHrData(myData,date)
-                                            insert(myData,date)
-                                            Log.d("repository","insert success!")
-                                    }
+
                                 }
                             }
                         }
