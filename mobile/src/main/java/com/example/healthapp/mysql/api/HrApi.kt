@@ -1,5 +1,6 @@
 package com.example.healthapp.mysql.api
 
+import android.graphics.Bitmap
 import com.example.healthapp.mysql.model.Hr
 import retrofit2.Call
 import retrofit2.http.Body
@@ -12,4 +13,5 @@ interface HrApi {
 
     @GET("get")
     fun getAllData() : Call<List<Hr>>
+
 }

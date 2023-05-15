@@ -98,24 +98,7 @@ class MeasureDataViewModel(
             availability.value = DataTypeAvailability.UNKNOWN
         }
     }
-//    fun updateHeartRate(dataClient: DataClient, hr: Int){
-//        viewModelScope.launch(Dispatchers.IO) {
-//            val putDataMapRequest = PutDataMapRequest.create("/heart_rate")
-//            putDataMapRequest.dataMap.putInt("heart_rate_key", hr.toInt())
-//            val putDataReq = putDataMapRequest.asPutDataRequest()
-//            putDataReq.setUrgent()
-//            val putDataTask = dataClient.putDataItem(putDataReq)
-//            try {
-//                Tasks.await(putDataTask).apply {
-//                    Log.d("UpdateHeartRate in apply",hr.toString())
-//                }
-//            } catch (e: ExecutionException) {
-//                Log.d("UpdateCalories", "updateCalories: Failure ${e.printStackTrace()}")
-//            } catch (e: InterruptedException) {
-//                Log.d("UpdateCalories", "updateCalories: Failure ${e.printStackTrace()}")
-//            }
-//        }
-//    }
+
     private fun insert(value :Int, time: String){
         val requestData = Hr(value,time)
         Log.d("requestData",requestData.toString())

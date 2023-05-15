@@ -19,7 +19,10 @@ import com.example.healthapp.R
 import com.example.healthapp.adapter.ViewPagerAdapter
 import com.example.healthapp.databinding.ActivityMainBinding
 import com.example.healthapp.db.DbViewModel
-import com.example.healthapp.view.TensorActivity
+import com.example.healthapp.view.CameraActivity
+import com.example.healthapp.view.ImageActivity
+//import com.example.healthapp.view.TensorGalleryActivity
+import com.example.healthapp.view.TensorCameraActivity
 import com.example.healthapp.view.hr.MainViewModel
 import com.google.android.material.tabs.TabLayoutMediator
 import java.text.SimpleDateFormat
@@ -27,7 +30,7 @@ import java.text.SimpleDateFormat
 class MainActivity : AppCompatActivity() {
 
     private lateinit var rvAdapter : ActivityRVAdapter
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var binding : ActivityMainBinding
     private val viewModel : MainViewModel by viewModels()
     private val dbViewModel : DbViewModel by viewModels()
     private var isServiceRunning = false
@@ -42,6 +45,7 @@ class MainActivity : AppCompatActivity() {
 
         val viewPager = findViewById<ViewPager2>(R.id.pager)
         val viewPagerAdapter = ViewPagerAdapter(this)
+
         viewPager.adapter = viewPagerAdapter
         TabLayoutMediator(binding.tabLayout,binding.pager){tab,position ->
 
@@ -69,6 +73,11 @@ class MainActivity : AppCompatActivity() {
 
         val toggleBtn = findViewById<ToggleButton>(R.id.toggleButton)
 
+        binding.cameraBtn.setOnClickListener {
+            val intent = Intent(this,CameraActivity::class.java)
+            startActivity(intent)
+        }
+
         // Set up the foreground service intent
         val foregroundServiceIntent = Intent(this, MyForegroundService::class.java)
 
@@ -85,7 +94,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.tensorTest.setOnClickListener {
-            val intent = Intent(this,TensorActivity::class.java)
+//            val intent = Intent(this, TensorGalleryActivity::class.java)
+            val intent = Intent(this,ImageActivity::class.java)
             startActivity(intent)
         }
 
