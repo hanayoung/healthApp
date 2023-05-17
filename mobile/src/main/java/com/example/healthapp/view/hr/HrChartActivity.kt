@@ -44,6 +44,7 @@ class HrChartActivity : AppCompatActivity() {
                 Log.d("edittext",binding.inputTxt.text.toString())
                 val stMin = binding.inputTxt.text.toString().toIntOrNull()
                 viewModel.getData()
+
 //                dbViewModel.hrList.observe(this, Observer {
 //                    if(dbViewModel.hrList.value!=null){
 //                        hrDataList.clear()

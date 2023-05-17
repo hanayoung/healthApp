@@ -149,6 +149,7 @@
                 android:textColor="@color/black"
                 android:layout_gravity="center"/>
             <ImageView
+                android:id = "@+id/galleryBtn"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:background="@drawable/round_icon_dot"
