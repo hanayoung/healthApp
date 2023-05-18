@@ -18,11 +18,6 @@ import com.example.healthapp.R
 import com.example.healthapp.mysql.RetrofitInstance
 import com.example.healthapp.mysql.api.ImgApi
 import kotlinx.coroutines.*
-import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import java.io.ByteArrayOutputStream
 
 class ImageActivity : AppCompatActivity() {
     private val client = RetrofitInstance.getInstance().create(ImgApi::class.java)
@@ -32,8 +27,8 @@ class ImageActivity : AppCompatActivity() {
         setContentView(R.layout.activity_image)
 
         val img = findViewById<ImageView>(R.id.getImage)
-        val userName = "tester"
-//        val userName = "gatester"
+//        val userName = "tester"
+        val userName = "catester"
         imageLoaderScope.launch(Dispatchers.IO) {
             try {
                 val response = client.getImg(userName).execute()

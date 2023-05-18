@@ -18,7 +18,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
 import com.example.healthapp.R
-import com.example.healthapp.ml.LiteModelImagenetMobilenetV3Large075224FeatureVector5Metadata1
 import com.example.healthapp.mysql.RetrofitInstance
 import com.example.healthapp.mysql.api.ImgApi
 import com.google.mlkit.vision.common.InputImage
@@ -27,7 +26,6 @@ import com.google.mlkit.vision.face.FaceDetectorOptions
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -61,24 +59,14 @@ class TensorCameraActivity : AppCompatActivity() {
         var activityIntent = intent
         val testUri = activityIntent.getStringExtra("uri")
         val parsedUri = Uri.parse(testUri)
-        Log.d("testUri",parsedUri.toString())
         path = absolutelyPath(parsedUri,this)
         Log.d("path",path)
-        lateinit var bitmap : Bitmap
         val options = BitmapFactory.Options()
         options.inSampleSize = 4
         val src = BitmapFactory.decodeFile(path, options)
         val (height: Int, width: Int) = options.run { outHeight to outWidth }
         resized = Bitmap.createScaledBitmap(src, width/2, height/2, true)
-//        try{
-//            bitmap = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
-//                ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver,parsedUri)) // 선택한 사진 uri -> bitmap 변환
-//            } else{
-//                MediaStore.Images.Media.getBitmap(contentResolver,parsedUri)
-//            }
-//        }catch (e:IOException){
-//            e.printStackTrace()
-//        }
+
         if (testUri != null) {
             Glide.with(this)
                 .load(parsedUri)
@@ -88,13 +76,10 @@ class TensorCameraActivity : AppCompatActivity() {
     }
 
     private fun extractColor(imageBitmap: Bitmap) : String{ // bitmap으로 이미지 전달받아서 색상 추출
-        val model = LiteModelImagenetMobilenetV3Large075224FeatureVector5Metadata1.newInstance(this)
-
         var bitmap = imageBitmap
         bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true) // ARGB_8888 bitmaps 만 support하는 오류 잡기 위한 코드
 
         val palette = Palette.from(bitmap).generate()
-        val dominantColor = palette.dominantSwatch
         val swatches = palette.swatches
         var maxPop = 0
         var maxHex : String = "#ffffff"
@@ -113,7 +98,6 @@ class TensorCameraActivity : AppCompatActivity() {
                 }
             }
         }
-        model.close()
         return maxHex
     }
     private fun getEyeContour(imageUri: Uri){
@@ -130,8 +114,6 @@ class TensorCameraActivity : AppCompatActivity() {
                     for (face in faces){
                         val leftEyeContour = face.allContours[5]
                         val rightEyeContour = face.allContours[6]
-
-                        Log.d("eyeContour","$leftEyeContour  $rightEyeContour")
 
                         var maxLeftX : Float = 0.0F
                         var minLeftX : Float = 9999.0F
@@ -162,15 +144,14 @@ class TensorCameraActivity : AppCompatActivity() {
                             if(minRightY>idx.y)
                                 minRightY = idx.y
                         }
-                        val originalImage =
-                            MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-                        cropImgLeft.setImageBitmap(originalImage)
+                        val filePath = absolutelyPath(imageUri,this)
+                        val rotatedResizedBitmap : Bitmap = rotatedBitmap(resized,filePath)!!
 
                         val leftResult = cropImage(minLeftX,minLeftY,maxLeftX,maxLeftY,imageUri,cropImgLeft)
                         val rightResult = cropImage(minRightX,minRightY,maxRightX,maxRightY,imageUri,cropImgRight)
                         if(leftResult!=null && rightResult !=null){
                             val list : List<String> = arrayListOf(leftResult,rightResult)
-                            insert(resized,path,list)
+                            insert(rotatedResizedBitmap,path,list)
                         }
                     }
                 }
@@ -217,7 +198,7 @@ class TensorCameraActivity : AppCompatActivity() {
         try{
             file.createNewFile()
             out = FileOutputStream(file)
-            img.compress(Bitmap.CompressFormat.JPEG,30,out) // 용량 확인해보기
+            img.compress(Bitmap.CompressFormat.JPEG,50,out) // 용량 확인해보기
         }catch (e: java.lang.Exception){
             e.printStackTrace()
         }finally {
@@ -230,7 +211,7 @@ class TensorCameraActivity : AppCompatActivity() {
         val requestFile = RequestBody.create(MediaType.parse("image/*"), file)
         Log.d("file",file.name)
         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-        val user = "tester"
+        val user = "catester"
         val info = infoList.toString()
         client.insertImg(body, user, info).enqueue(object: Callback<String>{
             override fun onResponse(call: Call<String>, response: Response<String>) {

@@ -233,8 +233,6 @@ class TensorGalleryActivity : AppCompatActivity() {
     }
 
     private fun tensor4(imageBitmap: Bitmap) : String{ // bitmap으로 이미지 전달받아서 색상 추출
-        val model = LiteModelImagenetMobilenetV3Large075224FeatureVector5Metadata1.newInstance(this)
-
         var bitmap = imageBitmap
         bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true) // ARGB_8888 bitmaps 만 support하는 오류 잡기 위한 코드
 
@@ -257,7 +255,6 @@ class TensorGalleryActivity : AppCompatActivity() {
                 }
             }
         }
-        model.close()
         return maxHex
     }
 
@@ -295,7 +292,7 @@ class TensorGalleryActivity : AppCompatActivity() {
     }
 
     private fun insert(imageUri:Uri, infoList : List<String>){
-        val file = File(absolutelyPath(imageUri, this))
+        val file = File(absolutelyPath(imageUri, this)) // path 동일
         val requestFile = RequestBody.create(MediaType.parse("image/*"), file)
         Log.d("file",file.name)
         Log.d("path",file.absolutePath)

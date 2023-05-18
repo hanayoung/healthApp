@@ -27,10 +27,6 @@ import com.example.healthapp.presentation.data.MeasureMessage
 import com.example.healthapp.presentation.mysql.RetrofitInstance
 import com.example.healthapp.presentation.mysql.api.HrApi
 import com.example.healthapp.presentation.mysql.model.Hr
-import com.google.android.gms.tasks.Tasks
-import com.google.android.gms.wearable.DataClient
-import com.google.android.gms.wearable.PutDataMapRequest
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import retrofit2.Call

@@ -43,10 +43,6 @@ class HealthServicesRepository(context: Context) {
         val capabilities = measureClient.getCapabilitiesAsync().await()
         return (DataType.HEART_RATE_BPM in capabilities.supportedDataTypesMeasure)
     }
-    suspend fun hasVo2Capability(): Boolean {
-        val capabilities = measureClient.getCapabilitiesAsync().await()
-        return (DataType.VO2_MAX in capabilities.supportedDataTypesMeasure)
-    }
 
     /**
      * Returns a cold flow. When activated, the flow will register a callback for heart rate data
