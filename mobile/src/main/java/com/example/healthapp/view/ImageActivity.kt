@@ -137,14 +137,4 @@ class ImageActivity : AppCompatActivity() {
         }
         return resultBitmap
     }
-    private fun absolutelyPath(path: Uri?, context : Context): String {
-        var proj: Array<String> = arrayOf(MediaStore.Images.Media.DATA)
-        var c: Cursor? = context.contentResolver.query(path!!, proj, null, null, null)
-        var index = c?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-        c?.moveToFirst()
-
-        var result = c?.getString(index!!)
-        Log.d("result",result.toString())
-        return result!!
-    } // 절대경로로 변환하는 함수
 }

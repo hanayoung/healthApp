@@ -1,6 +1,5 @@
 package com.example.healthapp.view
 
-import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.graphics.Bitmap
@@ -18,8 +17,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
 import com.example.healthapp.R
-import com.example.healthapp.ml.LiteModelImagenetMobilenetV3Large075224FeatureVector5Metadata1
-import com.example.healthapp.ml.MobilenetV1025192Quantized1Metadata1
 import com.example.healthapp.mysql.RetrofitInstance
 import com.example.healthapp.mysql.api.ImgApi
 import com.google.mlkit.vision.common.InputImage
@@ -28,12 +25,11 @@ import com.google.mlkit.vision.face.FaceDetectorOptions
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.label.Category
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 
 class TensorGalleryActivity : AppCompatActivity() {
@@ -42,8 +38,8 @@ class TensorGalleryActivity : AppCompatActivity() {
     private lateinit var text : TextView
     private lateinit var cropImgRight : ImageView
     private lateinit var cropImgLeft : ImageView
+    private var filePathList = ArrayList<String>()
     private val client = RetrofitInstance.getInstance().create(ImgApi::class.java)
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,39 +75,7 @@ class TensorGalleryActivity : AppCompatActivity() {
         }
     }
 
-    private fun tensor(imageUri: Uri) { // 객체 판별하는 ai 모델 사용
-        val model = MobilenetV1025192Quantized1Metadata1.newInstance(this)
-            // 기본 이미지의 리소스와 추가한 이미지의 리소스를 비교해서 다를 경우 예외처리
-            var bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver,imageUri)) // 선택한 사진 uri -> bitmap 변환
-            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true) // ARGB_8888 bitmaps 만 support하는 오류 잡기 위한 코드
-
-            // Creates inputs for reference.
-            val image = TensorImage.fromBitmap(bitmap)
-
-            // Runs model inference and gets result.
-            val outputs = model.process(image)
-
-            val probability : List<Category> = outputs.probabilityAsCategoryList
-
-            var index =0
-            var max = probability[0].score
-
-            for (i in 1 until probability.size){
-                if(max< probability[i].score){
-                    max = probability[i].score
-                    index = i
-                }
-            } // probability score가 가장 높은 인덱스 찾기
-
-            val output : Category = probability[index]
-            text.text=output.label
-            // Releases model resources if no longer used.
-            model.close()
-    }
-
     private fun tensor2(imageUri: Uri){ // 이미지 uri로 전달받아서 색상 추출
-        val model = LiteModelImagenetMobilenetV3Large075224FeatureVector5Metadata1.newInstance(this)
-
         var bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver,imageUri)) // 선택한 사진 uri -> bitmap 변환
         bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true) // ARGB_8888 bitmaps 만 support하는 오류 잡기 위한 코드
 
@@ -131,16 +95,6 @@ class TensorGalleryActivity : AppCompatActivity() {
                 Log.d("hex","$hex  $pop")
             }
         }
-// Creates inputs for reference.
-        val image = TensorImage.fromBitmap(bitmap)
-
-        val outputs = model.process(image)
-        val feature = outputs.featureAsTensorBuffer
-//        Log.d("feature",feature.buffer.toString())
-//        Log.d("feature",feature.dataType.toString())
-//        Log.d("feature",feature.shape.toString())
-
-        model.close()
 
     }
 
@@ -214,8 +168,8 @@ class TensorGalleryActivity : AppCompatActivity() {
                         val rightCheekWidth = (rightCheekCenterX - maxNoseX)
 
 
-                        val leftResult = cropImage(minLeftX,minLeftY,maxLeftX,maxLeftY,imageUri,cropImgLeft)
-                        val rightResult = cropImage(minRightX,minRightY,maxRightX,maxRightY,imageUri,cropImgRight)
+                        val leftResult = cropImage(minLeftX,minLeftY,maxLeftX,maxLeftY,imageUri,cropImgLeft,"leftEye")
+                        val rightResult = cropImage(minRightX,minRightY,maxRightX,maxRightY,imageUri,cropImgRight,"rightEye")
 //                        cropImageCenter(leftCheekCenterX,leftCheekCenterY, leftCheekWidth, imageUri, cropImgLeft)
 //                        cropImageCenter(rightCheekCenterX,rightCheekCenterY,rightCheekWidth,imageUri,cropImgRight)
                         if(leftResult!=null&&rightResult!=null){
@@ -258,7 +212,15 @@ class TensorGalleryActivity : AppCompatActivity() {
         return maxHex
     }
 
-    private fun cropImage(minX:Float,minY:Float,maxX:Float,maxY:Float,imageUri: Uri,img:ImageView) : String{
+    private fun cropImage(
+        minX:Float,
+        minY:Float,
+        maxX:Float,
+        maxY:Float,
+        imageUri: Uri,
+        img:ImageView,
+        name : String
+    ) : String{
         val originalImage =
             MediaStore.Images.Media.getBitmap(contentResolver,imageUri)
 
@@ -273,8 +235,12 @@ class TensorGalleryActivity : AppCompatActivity() {
         val croppedImage = Bitmap.createBitmap(originalImage, x, y, width, height)
 
         img.setImageBitmap(croppedImage)
+
+        val uri = bitmapToRealPath(croppedImage,name)
+        filePathList.add(uri)
+
         return tensor4(croppedImage)
-    }
+    } // 눈영역 잡을 때 crop
     private fun cropImageCenter(centerX:Float,centerY:Float,width:Float,imageUri: Uri,img:ImageView){
         val originalImage =
             MediaStore.Images.Media.getBitmap(contentResolver,imageUri)
@@ -289,17 +255,39 @@ class TensorGalleryActivity : AppCompatActivity() {
 
         img.setImageBitmap(croppedImage)
         tensor4(croppedImage)
-    }
+    } // cheek 영역 잡을 때 crop
 
     private fun insert(imageUri:Uri, infoList : List<String>){
-        val file = File(absolutelyPath(imageUri, this)) // path 동일
+        val file = File(absolutelyPath(imageUri)) // path 동일
         val requestFile = RequestBody.create(MediaType.parse("image/*"), file)
         Log.d("file",file.name)
         Log.d("path",file.absolutePath)
         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
         val user = "gatester"
         val info = infoList.toString()
-        client.insertImg(body,user,info).enqueue(object: Callback<String>{
+
+        // 여러 file들을 담아줄 ArrayList
+        val files: ArrayList<MultipartBody.Part> = ArrayList()
+        files.add(body)
+
+        // 파일 경로들을 가지고있는 `ArrayList<Uri> filePathList`가 있다고 칩시다...
+        Log.d("filePathList  ",filePathList.toString())
+
+        for (i in 0 until filePathList.size) {
+            // Uri 타입의 파일경로를 가지는 RequestBody 객체 생성
+            val fileBody: RequestBody =
+                RequestBody.create(MediaType.parse("image/jpeg"), filePathList[i])
+
+            val fileName = "photo$i.jpg"
+
+            val filePart: MultipartBody.Part =
+                MultipartBody.Part.createFormData("photo", fileName, fileBody)
+
+            files.add(filePart)
+            Log.d("files ",files.toString())
+        }
+
+        client.insertImg(files,user,info).enqueue(object: Callback<String>{
             override fun onResponse(call: Call<String>, response: Response<String>) {
                 if(response.isSuccessful){
                     Toast.makeText(this@TensorGalleryActivity, "이미지 전송 성공", Toast.LENGTH_SHORT).show()
@@ -317,15 +305,27 @@ class TensorGalleryActivity : AppCompatActivity() {
             }
         })
     }
-    private fun absolutelyPath(path: Uri?, context : Context): String {
+    fun absolutelyPath(path: Uri?): String {
         var proj: Array<String> = arrayOf(MediaStore.Images.Media.DATA)
-        var c: Cursor? = context.contentResolver.query(path!!, proj, null, null, null)
+        var c: Cursor? = contentResolver.query(path!!, proj, null, null, null)
         var index = c?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
         c?.moveToFirst()
 
         var result = c?.getString(index!!)
-
+        Log.d("result",result.toString())
         return result!!
     } // 절대경로로 변환하는 함수
+    fun bitmapToRealPath(bitmap: Bitmap, name: String): String {
+        val file = File(cacheDir, name)
 
+        try {
+            FileOutputStream(file).use { fos ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                fos.flush()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return file.absolutePath
+    }
 }

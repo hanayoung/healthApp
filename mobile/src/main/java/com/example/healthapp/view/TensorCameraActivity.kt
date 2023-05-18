@@ -1,7 +1,5 @@
 package com.example.healthapp.view
 
-import android.content.Context
-import android.content.Intent
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -13,7 +11,6 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
@@ -36,13 +33,12 @@ import java.io.OutputStream
 
 
 class TensorCameraActivity : AppCompatActivity() {
-    private lateinit var launcher: ActivityResultLauncher<Intent>
     private lateinit var img : ImageView
-//    private lateinit var text : TextView
     private lateinit var cropImgRight : ImageView
     private lateinit var cropImgLeft : ImageView
     private lateinit var path: String
     private lateinit var resized :Bitmap
+    private lateinit var filePathList : ArrayList<String>
     private val client = RetrofitInstance.getInstance().create(ImgApi::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,7 +55,7 @@ class TensorCameraActivity : AppCompatActivity() {
         var activityIntent = intent
         val testUri = activityIntent.getStringExtra("uri")
         val parsedUri = Uri.parse(testUri)
-        path = absolutelyPath(parsedUri,this)
+        path = absolutelyPath(parsedUri)
         Log.d("path",path)
         val options = BitmapFactory.Options()
         options.inSampleSize = 4
@@ -144,11 +140,11 @@ class TensorCameraActivity : AppCompatActivity() {
                             if(minRightY>idx.y)
                                 minRightY = idx.y
                         }
-                        val filePath = absolutelyPath(imageUri,this)
+                        val filePath = absolutelyPath(imageUri)
                         val rotatedResizedBitmap : Bitmap = rotatedBitmap(resized,filePath)!!
 
-                        val leftResult = cropImage(minLeftX,minLeftY,maxLeftX,maxLeftY,imageUri,cropImgLeft)
-                        val rightResult = cropImage(minRightX,minRightY,maxRightX,maxRightY,imageUri,cropImgRight)
+                        val leftResult = cropImage(minLeftX,minLeftY,maxLeftX,maxLeftY,imageUri,cropImgLeft,"leftEye")
+                        val rightResult = cropImage(minRightX,minRightY,maxRightX,maxRightY,imageUri,cropImgRight,"rightEye")
                         if(leftResult!=null && rightResult !=null){
                             val list : List<String> = arrayListOf(leftResult,rightResult)
                             insert(rotatedResizedBitmap,path,list)
@@ -168,9 +164,10 @@ class TensorCameraActivity : AppCompatActivity() {
         maxX: Float,
         maxY: Float,
         imageUri: Uri,
-        img: ImageView
+        img: ImageView,
+        name : String
     ): String {
-        val filePath = absolutelyPath(imageUri,this)
+        val filePath = absolutelyPath(imageUri)
 
         val originalImage =
             MediaStore.Images.Media.getBitmap(contentResolver, imageUri) // 카메라로 찍을 때 회전되어 나타남.
@@ -187,8 +184,9 @@ class TensorCameraActivity : AppCompatActivity() {
         Log.d("croppedImage","$x $y $width $height")
 
         val croppedImage = Bitmap.createBitmap(rotatedBitmap, x, y, width, height)
-//        img.setImageBitmap(originalImage)
         img.setImageBitmap(croppedImage)
+        val uri = bitmapToRealPath(croppedImage,name)
+        filePathList.add(uri)
         return extractColor(croppedImage)
     }
 
@@ -213,7 +211,26 @@ class TensorCameraActivity : AppCompatActivity() {
         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
         val user = "catester"
         val info = infoList.toString()
-        client.insertImg(body, user, info).enqueue(object: Callback<String>{
+
+        // 여러 file들을 담아줄 ArrayList
+        val files: ArrayList<MultipartBody.Part> = ArrayList()
+        files.add(body)
+
+        // 파일 경로들을 가지고있는 `ArrayList<Uri> filePathList`가 있다고 칩시다...
+
+        for (i in 0 until filePathList.size) {
+            // Uri 타입의 파일경로를 가지는 RequestBody 객체 생성
+            val fileBody: RequestBody =
+                RequestBody.create(MediaType.parse("image/jpeg"), filePathList[i])
+
+            val fileName = "photo$i.jpg"
+
+            val filePart: MultipartBody.Part =
+                MultipartBody.Part.createFormData("photo", fileName, fileBody)
+
+            files.add(filePart)
+        }
+        client.insertImg(files, user, info).enqueue(object: Callback<String>{
             override fun onResponse(call: Call<String>, response: Response<String>) {
                 if(response.isSuccessful){
                     Toast.makeText(this@TensorCameraActivity, "이미지 전송 성공", Toast.LENGTH_SHORT).show()
@@ -229,6 +246,7 @@ class TensorCameraActivity : AppCompatActivity() {
             }
         })
     }
+
     fun getOrientationOfImage(filepath : String): Int? {
         var exif : ExifInterface? = null
         var result: Int? = null
@@ -271,10 +289,9 @@ class TensorCameraActivity : AppCompatActivity() {
         }
         return resultBitmap
     }
-
-    private fun absolutelyPath(path: Uri?, context : Context): String {
+    private fun absolutelyPath(path: Uri?): String {
         var proj: Array<String> = arrayOf(MediaStore.Images.Media.DATA)
-        var c: Cursor? = context.contentResolver.query(path!!, proj, null, null, null)
+        var c: Cursor? = contentResolver.query(path!!, proj, null, null, null)
         var index = c?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
         c?.moveToFirst()
 
@@ -282,5 +299,16 @@ class TensorCameraActivity : AppCompatActivity() {
         Log.d("result",result.toString())
         return result!!
     } // 절대경로로 변환하는 함수
-
+    fun bitmapToRealPath(bitmap: Bitmap, name: String): String {
+        val file = File(cacheDir, name)
+        try {
+            FileOutputStream(file).use { fos ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                fos.flush()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return file.absolutePath
+    }
 }

@@ -11,7 +11,7 @@ interface ImgApi {
     @Multipart
     @POST("image/upload")
     fun insertImg(
-        @Part file: MultipartBody.Part, // 이미지 파일을 전송할 것이기 때문에 데이터타입은 MultipartBody.Part 로 지정해야 합니다.
+        @Part files: List<MultipartBody.Part>, // 이미지 파일을 전송할 것이기 때문에 데이터타입은 MultipartBody.Part 로 지정해야 합니다.
         @Part("user") user : String,
         @Part("info") info : String
     ): Call<String>
